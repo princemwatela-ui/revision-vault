@@ -21,6 +21,9 @@ body{background:#faf8f4;font-family:Georgia,serif;color:#2c2416;min-height:100vh
 .grid-card .emoji{font-size:28px;margin-bottom:8px}
 .grid-card .name{font-weight:800;font-size:15px}
 .grid-card .sub{color:#a39585;font-size:13px;margin-top:4px}
+.grid-card .del{position:absolute;top:10px;right:12px;background:none;border:none;color:#a39585;cursor:pointer;font-size:18px;padding:2px}
+.add-card{background:#fff;border:2px dashed #d9d2c8;border-radius:14px;padding:18px 16px;cursor:pointer;color:#a39585;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color .15s}
+.add-card:hover{border-color:#8b6f47;color:#8b6f47}
 .stats-bar{display:flex;gap:18px;margin-bottom:16px;padding:12px 16px;background:#fff;border:2px solid #e8e2d9;border-radius:12px;flex-wrap:wrap;align-items:center}
 .stats-bar span{font-size:14px;color:#4a3728;font-weight:600}
 .stats-bar .ws{color:#c0392b}
@@ -61,451 +64,380 @@ body{background:#faf8f4;font-family:Georgia,serif;color:#2c2416;min-height:100vh
 .wrong-reviews{color:#a39585;font-size:11px;margin-top:2px}
 .wrong-answer{border-top:2px solid #e8e2d9;padding:10px 15px 13px 57px;background:#f0e8dc;font-size:14px;color:#2c2416;line-height:1.7;font-weight:500}
 .wrong-cols{columns:2;column-gap:16px}
-@media(max-width:700px){
-  .two-col{grid-template-columns:1fr}
-  .wrong-cols{columns:1}
-  .nav{padding:12px 14px}
-  .page{padding:14px}
-  .stats-bar .btns{margin-left:0;width:100%}
-}
+.overlay{position:fixed;inset:0;background:rgba(60,40,20,.35);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:#fff;border:2px solid #e8e2d9;border-radius:16px;padding:28px;width:100%;max-width:560px;box-shadow:0 6px 24px rgba(100,80,50,.14);max-height:90vh;overflow-y:auto}
+.modal h2{font-size:20px;font-weight:800;margin-bottom:4px}
+.modal p{font-size:13px;color:#a39585;margin-bottom:18px}
+.modal label{font-size:14px;color:#4a3728;margin-bottom:6px;display:block;font-weight:600}
+.modal input{width:100%;background:#f5f2ed;border:2px solid #d9d2c8;border-radius:9px;padding:11px 14px;color:#2c2416;font-size:15px;outline:none;font-family:Georgia,serif;margin-bottom:14px}
+.modal textarea{width:100%;background:#f5f2ed;border:2px solid #d9d2c8;border-radius:9px;padding:11px 14px;color:#2c2416;font-size:13px;outline:none;font-family:monospace;min-height:180px;resize:vertical;margin-bottom:4px}
+.modal-row{display:flex;gap:10px;margin-top:16px;justify-content:flex-end;flex-wrap:wrap}
+.btn-cancel{font-family:Georgia,serif;background:none;color:#4a3728;border:2px solid #d9d2c8;border-radius:9px;padding:9px 20px;font-size:14px;cursor:pointer}
+.btn-primary{font-family:Georgia,serif;background:#8b6f47;color:#fff;border:none;border-radius:9px;padding:9px 20px;font-weight:800;font-size:14px;cursor:pointer}
+.error{color:#c0392b;font-size:13px;margin-top:8px}
+.preview-list{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.preview-item{background:#f5f2ed;border:2px solid #e8e2d9;border-radius:9px;padding:10px 12px}
+.preview-sec{font-size:11px;color:#a39585;margin-bottom:3px}
+.preview-q{font-size:14px;font-weight:700;color:#2c2416;margin-bottom:3px}
+.preview-a{font-size:12px;color:#4a3728;line-height:1.5}
+.syncing{font-size:12px;color:#a39585;padding:4px 10px;border-radius:6px;background:#f5f2ed}
+.divider{text-align:center;color:#a39585;font-size:13px;margin:8px 0;position:relative}
+.divider::before,.divider::after{content:'';position:absolute;top:50%;width:44%;height:1px;background:#e8e2d9}
+.divider::before{left:0}.divider::after{right:0}
+@media(max-width:700px){.two-col{grid-template-columns:1fr}.wrong-cols{columns:1}.nav{padding:12px 14px}.page{padding:14px}.stats-bar .btns{margin-left:0;width:100%}}
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app"><div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:18px;color:#a39585">Loading...</div></div>
 <script>
-// ── DATA ──────────────────────────────────────────────────────────────────────
-const SUBJECTS = {
-  "Business": {
-    "Theme 1 — Marketing & People": {
-      "1.1": [
-        {q:"What is meant by the marketing mix?",a:"Product, Price, Promotion, Place (the 4Ps). Tools used to achieve marketing objectives and identify, anticipate and meet customer needs profitably."},
-        {q:"What is meant by an 'effective marketing mix'?",a:"One that meets customer needs and achieves marketing objectives, is balanced and consistently communicated across channels, and provides competitive advantage over rivals."},
-        {q:"Why is it important to have an effective marketing mix?",a:"Consumers are well-informed, rational and have changing tastes. Markets are competitive and constantly evolving. Technology changes require businesses to adapt quickly."},
-        {q:"What is a perishable good?",a:"Products/components that decay quickly. Examples: flowers, fresh food, dairy products. Requires efficient distribution and inventory management."},
-        {q:"What is the difference between a physical and an electronic market?",a:"Physical: buyers/sellers meet face-to-face (retail outlets, markets). Electronic: transactions occur online or via mail order. Electronic markets offer wider reach but are fiercely price-competitive."},
-        {q:"What is the difference between a need and a want?",a:"Need: essential for survival (e.g., water, basic food, shelter). Want: desirable but not essential (e.g., designer bag, premium tech). Wants can be cut back when disposable income falls."},
-        {q:"Explain the difference between direct and indirect competition.",a:"Direct: similar products targeting same consumers (Pepsi vs Coca-Cola). Indirect: different products competing for same expenditure (flights vs Eurotunnel). Both affect pricing, promotion and product decisions."},
-        {q:"How is market size calculated?",a:"Company sales value ÷ company market share × 100. Measures total sales of all producers by value or volume. Example: if a firm has £2m sales and 10% share, market size = £20m."},
-        {q:"Why is it important for a business to know the market size?",a:"Assesses whether market is worth entering, calculates own market share and competitor positioning, and identifies if market is expanding or contracting."},
-        {q:"How is market growth calculated?",a:"(Change in market size ÷ Original market size) × 100. Measures increase in sales value or volume over time. Example: market grows from £7m to £8m = 14.3% growth."},
-        {q:"How is market share calculated?",a:"(Company sales ÷ Total market sales) × 100. Can be measured by value (revenue) or volume (units). Indicates market leadership and strategic positioning."},
-        {q:"What is the difference between a niche and a mass market?",a:"Niche: small, specialist segment with distinctive needs (e.g., Long Tall Sally). Mass: large, undifferentiated market with varied backgrounds (e.g., Coca-Cola). Niche = higher prices, less competition; Mass = economies of scale, high competition."},
-        {q:"What are the advantages and disadvantages of selling in a niche market?",a:"Advantages: less competition, price premium possible, easier to focus on customer needs. Disadvantages: limited economies of scale, risk of over-reliance on one product, larger firms may enter."},
-        {q:"How may a business adapt their marketing mix for a niche market?",a:"Product: highly differentiated, unique features. Price: premium pricing due to reduced price sensitivity. Promotion: targeted via specialist media. Place: selective/exclusive distribution."},
-        {q:"What are the advantages and disadvantages of selling in a mass market?",a:"Advantages: economies of scale, higher sales potential, brand recognition. Disadvantages: intense competition, high marketing spend, harder to respond to taste changes."},
-        {q:"How may a business adapt their marketing mix for a mass market?",a:"Product: generic with differentiation via branding/USP. Price: competitive/going-rate pricing. Promotion: heavy advertising via wide-reach media. Place: intensive multi-channel distribution."},
-        {q:"What is meant by the term 'dynamic market'?",a:"Markets subject to rapid change requiring business adaptation. Driven by technology, consumer tastes, fashion, competition. Failure to adapt can lead to loss of market share or business failure."},
-        {q:"How does being in a dynamic market impact a business?",a:"Greater emphasis on innovation and R&D investment, opportunity for first-mover advantage, and risk of costly mistakes if products launched without sufficient testing."},
-        {q:"What are the advantages and disadvantages of online retailing to consumers?",a:"Advantages: easier price comparison, 24/7 access, home delivery, potentially lower prices. Disadvantages: cannot try before buying, delivery costs, website security concerns."},
-        {q:"What are the advantages and disadvantages of online retailing to businesses?",a:"Advantages: lower overheads, wider reach, easier data collection, 24/7 trading. Disadvantages: website security costs, harder personal selling, postage costs impact margins."},
-        {q:"What are the five reasons why growth may occur in existing markets and new markets?",a:"Economic growth (rising living standards), innovation (new technologies), social changes (demographic shifts), legislation (new laws create markets), and demographic changes (ageing population)."},
-        {q:"Explain what may happen if a business does not adapt to changes in markets?",a:"Loss of market share to more agile competitors, products become obsolete leading to declining sales, and potential business failure (e.g., Kodak and digital photography)."},
-        {q:"What five things may help a business adapt more quickly to market changes?",a:"Flexibility in working practices, ongoing market research, investment in new product development, continuous improvement in efficiency/quality, and niche development serving profitable specialist segments."},
-        {q:"What is the difference between risk and uncertainty?",a:"Risk: probabilities of outcomes are known or estimable (e.g., new competitor entry). Uncertainty: future events are unpredictable with no measurable probabilities (e.g., pandemic). Risk can be planned for; uncertainty is beyond control."}
-      ],
-      "1.2": [
-        {q:"Explain the difference between market and product orientation.",a:"Market orientation: designs products based on customer needs identified through research. Product orientation: focuses on product quality/innovation, assumes customers will buy. Market orientation is increasingly important due to competition and changing consumer preferences."},
-        {q:"What are the pros and cons of market orientation?",a:"Pros: responds quickly to market changes, anticipates trends, higher new product success rates. Cons: reactive rather than innovative, cannot guarantee market share, requires ongoing research investment."},
-        {q:"What are the pros and cons of product orientation?",a:"Pros: focuses on firm strengths, high-quality products, longer-term capital planning. Cons: may miss market opportunities, risk of product obsolescence, difficult if product isn't unique."},
-        {q:"Why is market orientation becoming increasingly more important?",a:"Greater competition and shorter product life-cycles, consumers more demanding and informed, markets more fragmented and open to new entrants."},
-        {q:"Explain the difference between primary and secondary research.",a:"Primary: first-hand data collected for specific purpose (questionnaires, focus groups, interviews). Secondary: existing data from external sources (government statistics, trade publications). Primary is tailored but expensive; secondary is cheaper but may lack relevance."},
-        {q:"What are the advantages and disadvantages of conducting market research?",a:"Advantages: reduces new product risk, aids forecasting, identifies opportunities/threats. Disadvantages: can be inaccurate, may stifle initiative, results may not be what business wants to hear."},
-        {q:"What is a product trial?",a:"Selling products in a confined area or providing free samples to gauge demand. Allows modification based on feedback before full-scale launch. Helps estimate costs, sales, revenue and set realistic targets."},
-        {q:"How can ICT support market research?",a:"Company websites: automated questionnaires, review systems, competitor analysis. Social networking: broad reach, targeted messaging, real-time trend monitoring. Databases: store large amounts of customer data for segmentation and targeting."},
-        {q:"Explain the difference between quantitative and qualitative research.",a:"Quantitative: numerical data from large samples using pre-set questions (surveys, audits). Qualitative: in-depth exploration of motivations using open discussion (focus groups, interviews). Quantitative is generalisable; qualitative reveals deeper insights."},
-        {q:"What are the benefits and drawbacks of quantitative research?",a:"Benefits: quick data collection, large samples, findings can be generalised. Drawbacks: lacks depth on motivations, hard to verify data validity, respondents often anonymous. Best for measuring 'what' and 'how much'."},
-        {q:"What are the benefits and drawbacks of qualitative research?",a:"Benefits: reveals real motivations, discovers unexpected insights, group discussion generates ideas. Drawbacks: expensive/time-consuming, small samples limit representativeness, data cannot be quantified. Best for exploring 'why'."},
-        {q:"Describe what segmentation is.",a:"Division of a market into groups with similar characteristics or needs. Methods: age, gender, income, location, lifestyle, benefits sought, usage rate. Example: toothpaste segmented by benefit (whitening, sensitivity, fresh breath)."},
-        {q:"What are the benefits and drawbacks of segmentation?",a:"Benefits: precise customer profiling, targeted communications, growth opportunities, better resource use. Drawbacks: costs of identifying/targeting multiple segments, logistical complexity, higher inventory requirements."},
-        {q:"What is market positioning?",a:"Ability to influence consumer perception of a brand relative to competitors. Establishes image/identity so consumers perceive product in a certain way. Achieved through emphasising benefits, USPs, product attributes or origins."},
-        {q:"Explain market mapping.",a:"Process of plotting products against competitors using two key variables (e.g., price vs quality). Identifies where a brand fits and reveals unfilled gaps/niches. Helps determine if repositioning is needed through relaunch, new design or advertising."},
-        {q:"What does competitive advantage mean?",a:"Attributes allowing a business to outperform rivals and generate greater value. Achieved through lower prices or superior benefits/service justifying higher prices. Enables greater sales, margins and/or customer retention than competitors."},
-        {q:"In what ways can a business achieve a competitive advantage?",a:"Cost structure: lower prices or higher margins through efficiency. Product/service: superior quality, design, reliability. Distribution: faster delivery, wider availability, exclusive channels. Plus: innovation, reputation, flexibility, ethical stance."},
-        {q:"Explain Michael Porter's Generic Strategies in relation to competitive advantage.",a:"Cost leadership: become lowest-cost producer. Differentiation: offer unique features justifying premium prices. Focus: apply cost leadership or differentiation to a specific segment. Businesses 'stuck in the middle' without clear strategy are less likely to succeed."},
-        {q:"What is product differentiation?",a:"How a business distinguishes its products from competitors through distinctive features or marketing. Creates a USP that makes consumers less price-sensitive. The more differentiated, the less concerned consumers become about price."},
-        {q:"Explain 'adding value'.",a:"Difference between selling price and cost price. Making product worth more in consumers' eyes through production process or marketing. Basis of all business activity; enables higher prices and competitive advantage."},
-        {q:"What does price elasticity of demand (PED) measure?",a:"Responsiveness of demand to a change in price. Formula: % change in quantity demanded ÷ % change in price. Always include negative sign in answer but ignore when interpreting elasticity."},
-        {q:"What do the PED values show?",a:"PED between 0 and -1: price inelastic (demand not very responsive). PED = -1: unit elastic. PED less than -1 (e.g., -2): price elastic (demand highly responsive to price)."},
-        {q:"What factors can influence the extent of price sensitivity?",a:"Degree of product differentiation, number of close substitutes, brand loyalty, switching costs, necessity vs luxury, % of income spent on good, time period, habitual consumption."},
-        {q:"What does income elasticity of demand (YED) measure?",a:"Responsiveness of demand to a change in consumer income. Formula: % change in quantity demanded ÷ % change in income. Positive = normal/luxury good; Negative = inferior good."},
-        {q:"What is the significance of YED to a business?",a:"High YED goods: demand volatile with economic cycle; plan capacity accordingly. Low YED goods: stable demand across economic phases; easier production planning. Helps forecast demand changes and adjust marketing/production strategies."}
-      ],
-      "1.3": [
-        {q:"Explain what the design mix is.",a:"Balance between function (does the job), aesthetics (looks/feels good), and economic manufacture (cost-effective). Products positioned within triangle based on priority of each element."},
-        {q:"Define promotion.",a:"Way business makes products known to current and potential customers. Aims to ensure awareness, persuade customers product is better than rivals, remind why to buy. All about communication using various methods in promotional mix."},
-        {q:"What are the seven types of promotion available to a business?",a:"Personal selling, direct marketing, advertising, public relations, sponsorship, sales promotions, and digital communications. Each has different characteristics, advantages and suitable applications."},
-        {q:"What role does packaging play in the selling of a product?",a:"Protection, distribution, selling (design/labelling conveys image), customer convenience. Critical when product cannot be differentiated by features alone. Helps advertise brand, maintain quality, encourage impulse buying."},
-        {q:"What types of promotion build long-term sales?",a:"Branding: creates distinct identity and customer loyalty. Persuasive advertising: builds brand image and emotional connection. Public relations: enhances reputation and goodwill over time."},
-        {q:"What types of promotion build short-term sales?",a:"Sales promotions: BOGOF, discounts, coupons, loyalty points. Direct selling: personal contact to close sales quickly. Merchandising: in-store presentation encourages impulse buying."},
-        {q:"What factors determine the promotional mix chosen?",a:"Stage in product life cycle, nature of product, competition level, marketing budget, overall marketing strategy, target market characteristics, and legal factors (e.g., tobacco advertising restrictions)."},
-        {q:"What is branding?",a:"Process of creating distinct identity for business in minds of target audience. Characteristic/name/sign/symbol allowing consumers to identify and differentiate product. Provides USP and competitive advantage when strong."},
-        {q:"What are the benefits of strong branding?",a:"Added value: desirable image makes consumers willing to pay more. Ability to charge premium prices: loyal customers less likely to switch. Reduced price elasticity: consumers less price-sensitive."},
-        {q:"How can a business build their brand to be stronger?",a:"Unique selling points, advertising (national TV campaigns), sponsorship (high-profile associations), and social media (strengthen brand through endorsements and engagement)."},
-        {q:"What are the changes in branding and promotion which reflect social trends?",a:"Viral marketing: encouraging electronic sharing of brand messages. Social media: direct interaction via Instagram, TikTok, Facebook. Emotional branding: triggering emotional responses to create strong, lasting brand attachment."},
-        {q:"Define what a pricing strategy is.",a:"Plan for setting product price medium-to-long term to achieve corporate/marketing objectives. Balances being competitive with being profitable. Considers costs, customer perception, competition, objectives and market conditions."},
-        {q:"What factors influence the price a business sets?",a:"Production costs, customer perception of value, competitors' prices, market competition state, business objectives, customer demand, PED, target market, product life cycle stage, economic conditions."},
-        {q:"Explain the six different pricing strategies.",a:"Cost plus: full cost + % markup. Price skimming: high launch price reduced over time. Penetration: low launch price increased later. Predatory: undercutting to eliminate rivals. Competitive: matching rivals. Psychological: unusual price points (£9.99)."},
-        {q:"Explain what distribution is.",a:"Physical or online route product takes from producer to consumer. Concerns availability (how easily product can be bought) and visibility. Key questions: where/how do customers prefer to buy?"},
-        {q:"What is a distribution channel? Provide examples.",a:"Route taken by product from producer to consumer; each party is an intermediary. Examples: producer→consumer (Marmite online); producer→wholesaler→retailer (Heinz→Makro→corner shops); producer→retailer (Warburtons→Sainsbury's)."},
-        {q:"What factors influence the choice of distribution channel chosen?",a:"Cost, nature of product (perishable, technical, customised), market characteristics (geographic spread, competition), business factors (size, nature, existing networks). Short channels for industrial/expensive products; long channels for consumer goods."},
-        {q:"What is the product life-cycle?",a:"Theoretical concept showing stages products go through: development, introduction, growth, maturity, decline, obsolescence. Each stage has characteristic sales, profit, cash flow and marketing implications."},
-        {q:"Explain the characteristics of each stage of the product life-cycle.",a:"Development: R&D costs, no sales, negative cash flow. Introduction: low sales, high costs, heavy promotion. Growth: fast sales growth, profits emerge. Maturity: slowing growth, high profits. Decline: falling sales, declining profits."},
-        {q:"Explain what an extension strategy is.",a:"Aims to prolong product life and avoid decline stage. Methods: find new uses, add new products, increase usage rate, reposition, modify product, change price/promotion/distribution. Employed towards end of maturity phase."},
-        {q:"Explain what the Boston Matrix is.",a:"Tool analysing product portfolio based on market growth rate and relative market share. Four categories: Stars (high growth/high share), Problem Children (high growth/low share), Cash Cows (low growth/high share), Dogs (low growth/low share)."},
-        {q:"Explain all the characteristics associated with each category in the Boston Matrix.",a:"Stars: need investment to maintain leadership, self-financing. Problem Children: need substantial investment, negative cash flow. Cash Cows: harvest for cash, little investment needed. Dogs: generally not worth investing in; consider divestment."},
-        {q:"Explain how the marketing strategy in a niche market may differ to that in a mass market.",a:"Niche: product highly differentiated, premium pricing, targeted promotion via specialist media, selective distribution. Mass: generic product with USP, competitive pricing, heavy advertising, intensive multi-channel distribution."},
-        {q:"Explain the key differences between a B2B and a B2C company.",a:"B2C: impersonal mass communication, many customers, global location possible, simple buying process. B2B: close customer relationships, few important customers, location near clients often needed, complex multi-person buying process."},
-        {q:"What is customer loyalty?",a:"More than repeat purchase; implies emotional connection (love, liking, faith) to brand. Loyal customers valuable: easier to sell to, less price-sensitive, act as brand advocates. Built through consistent positive experiences."}
-      ],
-      "1.4": [
-        {q:"What is the difference between 'treating staff as an asset' and 'treating staff as a cost'?",a:"Asset: employees produce goods, deliver services, satisfy customers — business couldn't operate without them. Cost: wages, training, sick pay represent financial outlays to be minimised. Asset view invests in staff; cost view seeks to reduce expenditure."},
-        {q:"What are the advantages of treating staff as an asset?",a:"Motivational benefits: employees feel invested in and valued. Increased productivity, improved quality and customer service. Reduced labour turnover, lowering recruitment and training costs."},
-        {q:"What does 'flexible working' mean?",a:"Movements from fixed tasks, normal hours and locations. Includes: zero hours contracts, flexible hours, working from home, part-time, temporary workers, multiskilling, outsourcing. Empowers employees to choose when/where they work."},
-        {q:"What are the benefits to a business of offering flexible working practices?",a:"Savings on overheads, helps recruitment and retention, responds flexibly to short-term demand changes, accesses specialist skills without permanent hire, and leverages technology for remote working."},
-        {q:"What are the key differences between dismissal and redundancy?",a:"Dismissal: worker fired for failing to meet standards or misconduct; no pay-out; can be appealed if unfair. Redundancy: job no longer exists due to lack of work or restructuring; eligible for pay-out."},
-        {q:"Explain the difference between individual and collective bargaining.",a:"Individual: employment matters settled through negotiations between employee and employer directly. Collective: negotiation between employer and employee representatives (e.g., trade unions) on behalf of group. Collective gives workers more power."},
-        {q:"Why is effective recruitment in a business important?",a:"Helps recruit people who provide strategic advantage, especially critical in service sector. Service businesses differentiated by staff they employ. Hiring right people with right skills vital to achieve company objectives."},
-        {q:"Explain the difference between a job description and a person specification.",a:"Job description: outlines tasks, duties, responsibilities, reporting lines for the position itself. Person specification: details abilities, qualifications, experiences, characteristics needed to perform job successfully."},
-        {q:"What is internal recruitment and what are the benefits and drawbacks of it?",a:"Filling vacancy from existing workforce. Benefits: cheaper/quicker, managers know employees' skills, may require less training, good for motivation. Drawbacks: existing workers may lack required skills, may stagnate ideas, creates vacancy elsewhere."},
-        {q:"What is external recruitment and what are the benefits and drawbacks of it?",a:"Filling vacancy from outside business. Benefits: wider candidate pool, may bring needed skills, brings new ideas. Drawbacks: expensive/time-consuming, may demotivate existing staff who missed promotion."},
-        {q:"Explain the differences between induction, on-the-job and off-the-job training.",a:"Induction: introduction helping new hires learn the ropes; helps settle in but delays work start. On-the-job: training in workplace through doing; output continues but can be disruptive. Off-the-job: training away at specialist centres; full concentration but costly and no output."},
-        {q:"What does the organisational structure determine?",a:"Authority and responsibility: who is responsible for whom. Individual job roles and titles, accountability lines, formal communication routes. Relationships between employees, departments and locations."},
-        {q:"Explain what 'span of control' is.",a:"Number of employees for whom a manager is directly responsible. Narrow span: closer supervision, more hierarchy layers. Wide span: more subordinate independence, fewer managers but harder to control and support staff."},
-        {q:"Explain what a hierarchical (tall) structure is and the pros and cons.",a:"Many layers, long chains of command, narrow spans of control. Pros: promotion opportunities, higher earnings potential, easier supervision. Cons: slower communication/decision-making, clear status divisions, higher labour costs."},
-        {q:"Explain what a flat structure is and the pros and cons.",a:"Few layers, short chains of command, wide spans of control. Pros: quicker communication/decision-making, empowered employees, lower labour costs. Cons: manager workload large, less direct control, fewer promotion opportunities."},
-        {q:"Explain what a matrix structure is and the pros and cons.",a:"Individuals work across teams/projects as well as within own department. Pros: breaks down department barriers, uses skills in varied contexts, improves motivation. Cons: divided loyalties, unclear accountability, difficult co-ordination."},
-        {q:"What is delayering and what are the pros and cons?",a:"Removing layers of management from organisational hierarchy. Pros: lower labour costs, faster decision-making, shorter communication paths, stimulates innovation. Cons: widens spans of control, may overload remaining managers."},
-        {q:"What is delegation and what are the pros and cons?",a:"Assignment to others of authority for particular functions, tasks, decisions. Pros: reduces management stress, allows focus on key tasks, empowers subordinates. Cons: depends on subordinate quality, harder in smaller firms."},
-        {q:"What is the difference between centralised and decentralised decision-making?",a:"Centralised: decisions kept firmly at top of hierarchy among senior management. Decentralised: decision-making spread to junior managers, business units or trading locations. Centralised ensures consistency; decentralised allows local responsiveness."},
-        {q:"What is motivation?",a:"Factors within individuals that arouse, maintain and channel behaviour towards a goal. Will to work from enjoyment of work itself and/or desire to achieve goals. Methods: financial (salary, bonus) and non-financial (responsibility, praise)."},
-        {q:"Explain Taylor's theory of motivation.",a:"Workers only interested in money; react as individuals not groups; waste time and are lazy. Treat workers like machines: close supervision, timed tasks, autocratic management, division of labour. Motivate using piece-rate payment based on output quantity."},
-        {q:"Explain Mayo's theory of motivation.",a:"Studied impact of working conditions on productivity at Hawthorne plant. Found workplace is social system; satisfaction from freedom/control; communication influences morale. Workers need recognition, security, belonging (Hawthorne Effect)."},
-        {q:"Explain Maslow's theory of motivation.",a:"Five levels of human needs: physiological, safety, social, esteem, self-actualisation. Lower needs must be met before higher needs motivate. Hierarchy: basic needs (pay, conditions), safety (security), social (belonging), esteem (recognition), self-actualisation (fulfilling potential)."},
-        {q:"Explain Herzberg's theory of motivation.",a:"Two-factor theory: motivators (job content: responsibility, recognition, achievement) and hygiene factors (job context: pay, conditions, policies). Motivators increase satisfaction; hygiene factors decrease dissatisfaction. Recommends job enrichment and empowerment."},
-        {q:"Describe the five different financial incentives associated with motivation.",a:"Piecework: paid per item (encourages speed but focuses on quantity not quality). Commission: paid on sales. Bonus: additional payment for achieving target. Profit sharing: proportion of company profits. Performance-related pay: salary linked to performance assessment."}
-      ],
-      "1.5": [
-        {q:"What is an entrepreneur?",a:"Person who organises, operates and assumes risk for business venture. Takes risk in starting new business having identified a need or opportunity. Creative, imaginative, resilient, innovative, results-orientated, professional risk-taker."},
-        {q:"What is intrapreneurship?",a:"People within business (employees) creating/discovering new business opportunities. Leads to creation of new business parts or even new businesses. Business takes the financial risk, not the individual."},
-        {q:"What are the barriers to entrepreneurship?",a:"Lack of support, lack of finance, lack of entrepreneurial capacity (skills/talents/qualities), becoming an employer, lack of viable business idea, fear of failure, aversion to risk, and gender barriers."},
-        {q:"What are the financial reasons for setting up a business?",a:"Profit maximisation: make as much profit as possible, motivated by money, likely to take bigger risks. Profit satisficing: make enough profit to maintain interest, don't want responsibility of expansion, take fewer risks."},
-        {q:"What are the non-financial reasons for setting up a business?",a:"More control over working life, need for flexible working, frustration with unfulfilled potential, escape uninteresting job, pursue interest/hobby, want to be boss, satisfaction from building something, independence."},
-        {q:"Define what an objective is.",a:"Target which must be achieved to realise stated aim. Time-assigned target derived from goals and set in advance of strategy. Should be SMART: Specific, Measurable, Agreed, Realistic, Timed."},
-        {q:"Name and explain the eight different objectives a business could set.",a:"Survival, profit maximisation, sales maximisation, market share, cost efficiency, employee welfare, customer satisfaction, and social objectives. Each serves different purposes depending on business age, size and market conditions."},
-        {q:"Explain the difference between an aim, an objective and a strategy.",a:"Aim: long-term plan from which business objectives are derived. Objective: SMART target which must be achieved to realise stated aim. Strategy: plan of action to achieve objective; medium-to-long-term approach."},
-        {q:"What is the difference between unlimited liability and limited liability?",a:"Unlimited: owners personally responsible for business debts; may lose personal possessions to repay debts. Limited: owners only lose value of investment; personal possessions protected. Unlimited applies to unincorporated; limited applies to incorporated businesses."},
-        {q:"Clearly define what a sole trader is and the pros and cons.",a:"Individual owning business alone; can employ people but they don't share ownership. Pros: quick/easy setup, owner keeps all profits, simple to run, flexible. Cons: unlimited liability, harder to raise finance, no continuity if owner dies."},
-        {q:"Clearly define what a partnership is and the pros and cons.",a:"Business owned by more than one person; legal agreement sets out profit sharing, investment, decision-making, exit procedures. Pros: benefits from multiple expertise, shared burden. Cons: unlimited liability, profits shared, partners may disagree."},
-        {q:"Clearly define what a private limited company is and the pros and cons.",a:"Small-medium businesses; name ends Limited/Ltd; shares transferred privately only. Pros: limited liability, more capital via shares, control not lost to outsiders. Cons: financial information published, profits shared, can't raise large amounts like PLC."},
-        {q:"Clearly define what a public limited company is and the pros and cons.",a:"Owned by shareholders; name ends plc; run by board of directors accountable to shareholders. Pros: limited liability, more capital via public share sales, economies of scale. Cons: financial information published, expensive setup, outsider control possible."},
-        {q:"What is franchising?",a:"Franchisor grants licence (franchise) to franchisee to trade using brand/business format. Franchisor has track record of successful operation; allows franchisee to use idea/methods for fees. Examples: Domino's Pizza, McDonald's, Subway."},
-        {q:"What are the advantages and disadvantages to franchisees of franchising?",a:"Pros: still own business, lower risk (tried/tested idea), franchisor support, national marketing benefits, franchisor buying power. Cons: profit shared with franchisor, contracts reduce independence, expensive setup, must abide by strict rules."},
-        {q:"What is a social enterprise?",a:"Trade in goods/services for social purpose, focusing on tackling social problems, improving communities, life chances or environment. Make money selling in open market, reinvest profits back into business or community."},
-        {q:"Explain the difference between an opportunity cost and a trade-off.",a:"Opportunity cost: cost of choice made in terms of next best alternative foregone or sacrificed. Trade-off: having more of one thing potentially results in having less of another. Opportunity cost measures what you give up; trade-off acknowledges you can't have everything."},
-        {q:"What happens to a business as it grows and becomes more successful?",a:"Growth in: number of employees, size/number of financial transactions, number/size of customers, amount of regulation, quantity of resources used, level/range of communication needed. Transition from entrepreneur to leader requires adaptation."},
-        {q:"What are the difficulties associated with developing from entrepreneur to leader?",a:"Adapting mindset: entrepreneurs want control but leaders must relinquish control, delegate, trust specialists. Stress: livelihood dependence causes stress. Sharing ownership/control. Trust: need to delegate to specialists without feeling threatened."},
-        {q:"What is leadership?",a:"Relationship through which one person influences behaviour/actions of others. Leaders are followed, have vision of future, clear sense of direction for business. Decides what changes needed, prepared to shake things up to get them done."},
-        {q:"Describe the four different leadership styles.",a:"Autocratic: power with manager, top-down communication, close supervision. Paternalistic: leader decides what's best for employees, consults but final decision with manager. Democratic: worker involvement, shared power. Laissez-faire: little supervision, conscious delegation."},
-        {q:"What factors influence the leadership style?",a:"Personal value systems, manager's experience, confidence in subordinates, feelings of security, nature of business problems, type/size of organisation, team effectiveness, subordinate skills/experience, time/cost pressures."}
-      ]
-    },
-    "Theme 4 — Global Business": {
-      "4.1": [
-        {q:"What is economic growth and how is it measured?",a:"Economic growth is the increase in a country's productive capacity. Measured using Gross Domestic Product (GDP), which measures the monetary value of final goods and services produced within a country in a given period."},
-        {q:"What is an emerging economy?",a:"An economy that is in the process of rapid growth and industrialisation."},
-        {q:"What are the key features of an emerging economy?",a:"Undergoing rapid industrialisation, potential to become a developed economy, experiencing faster long-term growth, and still having many inhabitants in poverty — though economic growth is lifting many out of it."},
-        {q:"What tends to happen in growing economies?",a:"Average incomes rise and the middle class expands; consumers spend more on both imported and domestic goods; domestic firms grow and gain market power; demand for Western goods increases; new MNCs develop; infrastructure, education and workforce skills improve."},
-        {q:"What are the opportunities and threats in growing economies?",a:"Opportunities: growing educated middle-class consumers, cultural shifts creating demand, access to high-skilled but low-cost labour, potential for joint ventures. Threats: cheaper exports creating competitive pressure, undervalued currencies, weak IP protection, state subsidies to local industries."},
-        {q:"What countries are included in the BRICS economies?",a:"Brazil, Russia, India, China, South Africa."},
-        {q:"What countries are included in the MINTS economies?",a:"Mexico, Indonesia, Nigeria, Turkey, Singapore."},
-        {q:"Explain the four indicators of growth.",a:"GDP per capita: total GDP divided by population. Literacy: percentage of adults who can read and write. Health: measured by life expectancy, infant mortality, disease rates. HDI: combines life expectancy, mean years of schooling, and GNI per capita."},
-        {q:"Explain the difference between imports and exports.",a:"Exports are goods and services sold directly to foreign customers. Imports are goods bought for resale or raw materials brought in from a foreign country for production."},
-        {q:"Define specialisation.",a:"The process of concentrating on and becoming an expert in a particular subject or skill. For countries, it means focusing on industries where they have a comparative advantage."},
-        {q:"Where can specialisation come from?",a:"Specialisation may arise from proximity to raw materials, low labour costs, historical ability (e.g., Belgian chocolate, Scotch whisky), or other unique national advantages."},
-        {q:"How does specialisation benefit a country?",a:"It increases productivity and output, reduces average costs through economies of scale, boosts GDP growth, and enhances international competitiveness by focusing resources on areas of strength."},
-        {q:"Explain the link between specialisation and competitive advantage.",a:"Specialisation allows a country or business to produce goods more efficiently and at lower cost than others, creating a competitive advantage. This added value helps firms grow and succeed internationally."},
-        {q:"Identify the negative aspects of specialisation.",a:"A country may become over-reliant on one industry ('eggs in one basket'), making it vulnerable to global price changes or competition. Diseconomies of scale may also occur if firms grow too large and suffer from poor coordination."},
-        {q:"Explain what foreign direct investment (FDI) is.",a:"FDI is when a business from one country establishes operations or buys assets (e.g., factories, companies) in another country, typically involving an equity stake of more than 10%."},
-        {q:"Explain the difference between horizontal and vertical FDI.",a:"Horizontal FDI involves producing the same products or services abroad as at home (e.g., a Spanish bank buying a UK bank). Vertical FDI involves moving into another part of the production chain abroad (e.g., opening a call centre overseas)."},
-        {q:"Identify the reasons for FDI.",a:"Accessing fast-growing markets, maintaining control over operations, securing local resources or brands, gaining local knowledge and skills, avoiding trade barriers, protecting intellectual property, reducing transport costs, and being closer to customers."},
-        {q:"What is globalisation?",a:"The increasing integration and interdependence of countries through trade, cultural exchange, capital flows, and technology. It involves the growing interconnectedness of economies and societies worldwide."},
-        {q:"What factors have contributed to increased globalisation?",a:"Reduction of trade barriers, political change (democratisation), reduced transport and communication costs, rise of MNCs, increased FDI, migration, growth of the global labour force, and structural economic shifts."},
-        {q:"What are trade barriers?",a:"Government-imposed restrictions on international trade, such as tariffs (taxes on imports), quotas (limits on import quantities), legislation (technical or safety standards), and domestic subsidies."},
-        {q:"What are the benefits and drawbacks of trade liberalisation?",a:"Benefits: lower prices, wider choice of quality goods, increased business competition and productivity, access to global investment. Drawbacks: intensified competition squeezing profits, temporary or low-quality jobs, environmental damage, economic dependence."},
-        {q:"How do MNCs contribute to increased globalisation?",a:"MNCs drive globalisation by investing, producing, and selling in multiple countries. They account for two-thirds of global exports, spread technology and business practices, and integrate economies through FDI and global supply chains."},
-        {q:"How does migration contribute to increased globalisation?",a:"Migrants bring cultural exchange, create demand for home-country goods abroad, send remittances that boost origin economies, and supply both low-cost and high-skilled labour to host countries."},
-        {q:"What is protectionism?",a:"The practice of shielding domestic industries from foreign competition through tariffs, quotas, legislation, or subsidies."},
-        {q:"What are the four trade barriers?",a:"Tariffs, import quotas, government legislation, and domestic subsidies."}
-      ],
-      "4.2": [
-        {q:"What is a tariff?",a:"A tax placed on imported goods, raising their final price to consumers and reducing demand — making domestic alternatives relatively cheaper."},
-        {q:"What are the advantages and disadvantages of tariffs?",a:"Advantages: protect domestic jobs, give local firms a price advantage, raise tax revenue. Disadvantages: may not reduce demand for essential imports, invite retaliation from trading partners, and increase consumer prices."},
-        {q:"What is an import quota?",a:"A physical limit on the quantity of a good that can be imported into a country (e.g., only 10,000 units per year). An extreme form is an embargo (complete ban)."},
-        {q:"What are the advantages and disadvantages of import quotas?",a:"Advantages: protect domestic industries and jobs; make local goods appear better value. Disadvantages: provoke retaliatory quotas, require complex administration, and offer unclear levels of protection."},
-        {q:"What are domestic subsidies?",a:"Financial support (e.g., grants, tax breaks, interest-free loans) given to domestic producers or exporters to lower their costs, boost output, and enhance competitiveness abroad."},
-        {q:"What is a trading bloc?",a:"An intergovernmental agreement between nations to reduce or eliminate regional trade barriers and promote economic, political, and cultural integration."},
-        {q:"What are the four types of trading blocs?",a:"Free Trade Area: members remove barriers among themselves. Customs Union: common external tariff against non-members. Common Market: free movement of goods, services, capital and labour. Full Economic and Monetary Union: common currency and integrated economic policies."},
-        {q:"What are the benefits and drawbacks of trading blocs?",a:"Benefits: market expansion, access to comparative advantage, easier labour sourcing, aligned regulations, economies of scale. Drawbacks: exclusion of more efficient non-member producers, loss of national sovereignty, protection of inefficient domestic firms."},
-        {q:"What is a PUSH factor?",a:"An adverse situation in a business's home market that forces it to consider selling abroad, such as market saturation or intense competition."},
-        {q:"What are the three PUSH factors?",a:"Market saturation, high domestic competition, and shareholder pressure for higher returns."},
-        {q:"What are PULL factors?",a:"Attractive opportunities in international markets that compel a business to expand overseas, such as new growth markets or cost savings."},
-        {q:"What are the five PULL factors?",a:"Economies of scale, risk spreading, opportunities to sell abroad, acquiring brands and intellectual property, and cost savings."},
-        {q:"What is the difference between offshoring and outsourcing?",a:"Offshoring means relocating part of a business's operations to another country. Outsourcing means contracting an external organisation — domestic or foreign — to perform a business function."},
-        {q:"What are the pros and cons of offshoring?",a:"Pros: Lower labour costs, overall cost savings, tax benefits, 24/7 operations, access to skilled labour. Cons: Language/cultural barriers, quality control issues, job losses at home damaging reputation, time zone challenges."},
-        {q:"What are the pros and cons of outsourcing?",a:"Pros: Cost reduction, access to specialist knowledge/facilities, improved focus on core activities, greater flexibility. Cons: Reliance on third parties, loss of internal expertise, potential misalignment of interests, communication issues."},
-        {q:"What five factors may be considered when assessing a country as a market?",a:"Levels and growth of disposable income, ease of doing business, infrastructure, political stability, and exchange rate. Acronym: I PEEL (Income, Political stability, Ease of doing business, Exchange rate, Logistics/Infrastructure)."},
-        {q:"Why is political stability important when considering a country to sell into?",a:"Instability increases uncertainty and risk; stable governments minimise disruption to business operations and investment. Unrest, coups, or sudden policy changes can disrupt supply chains, damage assets, or force business closures."},
-        {q:"Define exchange rates.",a:"The price of one currency in terms of another (e.g., how many euros one pound can buy). A weak home currency makes exports cheaper (WPIDEC), boosting competitiveness; a strong currency makes exports dearer (SPICED)."},
-        {q:"What nine factors may be considered when assessing a country as a production location?",a:"Costs of production, skills and availability of labour force, infrastructure, location in a trading bloc, government incentives, ease of doing business, political stability, natural resources, and likely return on investment. Acronym: GILLC PENS."},
-        {q:"What is reshoring?",a:"The transfer of a business operation that was moved overseas back to its original country. Reasons include: reduced lead times, higher product quality, rising offshore wages, 'Made in Britain' branding, IP protection."},
-        {q:"What are the four routes into markets abroad?",a:"Licensing, franchising, exporting, and global joint ventures/mergers."},
-        {q:"What is a global joint venture?",a:"A temporary collaboration between two businesses from different countries to work on a specific project while remaining separate entities."},
-        {q:"What is a global merger?",a:"A permanent combination of two businesses from different countries into one entity, often of similar size, to cut costs, grow revenue, and increase profits (e.g., Kraft and Heinz)."},
-        {q:"What are the five reasons why global mergers or joint ventures take place?",a:"Spreading risk across regions, entering new markets/trading blocs, acquiring brand names/patents, securing resources/supplies, and maintaining/increasing global competitiveness."},
-        {q:"What does global competitiveness mean?",a:"A business's ability to compete successfully at home and abroad by offering better value (price, quality, service) than international rivals."}
-      ],
-      "4.3": [
-        {q:"What is global marketing?",a:"More than simply selling a product internationally — it includes the whole process of planning, producing, placing, and promoting a company's products in a worldwide market."},
-        {q:"What is glocalisation?",a:"Glocalisation (geocentric approach) means 'think global, act local' — maintaining a consistent global brand while adapting products and marketing to suit local customs, tastes, and traditions (e.g., McDonald's menus vary by country)."},
-        {q:"Explain what an ethnocentric approach is and the pros and cons.",a:"Assumes overseas markets are similar to the domestic market; makes little or no adaptation. Pros: full economies of scale, lower development and production costs. Cons: products may not sell well if they ignore cultural differences."},
-        {q:"Explain what a geocentric approach is and the pros and cons.",a:"Combines standardisation with local adaptation — maintaining global brand identity while making slight tweaks for local markets. Pros: tailored to local tastes, leading to higher sales. Cons: higher product development costs than ethnocentric."},
-        {q:"Explain what a polycentric approach is and the pros and cons.",a:"Fully adapts products and marketing to each local market (e.g., Toyota changes car models and names per country). Pros: highly market-oriented, reduces risk of failure. Cons: increased development costs, harder to compete with established local brands."},
-        {q:"What should be considered in relation to the adaptation of a marketing mix in global markets?",a:"Product: adjust for local tastes or regulations. Price: reflect local incomes, competition, taxes. Place: appropriate distribution channels (e.g., small kiosks in India vs supermarkets in UK). Promotion: ensure messages cross cultures effectively."},
-        {q:"What is niche marketing?",a:"A strategy that targets a small, specific segment of a larger market with highly differentiated products or services tailored to distinctive customer needs. Less competition, ability to charge premium prices."},
-        {q:"What is global niche marketing?",a:"Targeting small, specialised customer groups that exist across multiple countries — combining these segments creates a large enough global demand to be profitable."},
-        {q:"What is international desirability?",a:"The phenomenon where exclusive or luxury brands from one country are equally (or more) desirable in others due to perceived exclusivity, heritage, or exotic appeal. Driven by internet, social media, ease of international travel."},
-        {q:"What is cultural diversity?",a:"The recognition that people across the globe have different interests, values, religious beliefs, and cultural sensitivities that affect consumption patterns."},
-        {q:"Why might cultural diversity be seen as a problem by a UK business thinking of exporting?",a:"It requires costly product adaptations for each market, increasing development expenses and the risk of failure — undermining economies of scale."},
-        {q:"Why is doing business across cultures challenging?",a:"Cultural and social differences can lead to misunderstandings in communication, branding, advertising, and personal relationships — potentially causing costly marketing failures."},
-        {q:"How can inappropriate marketing materials be avoided?",a:"Conduct thorough research and 'check, check, and check again' using local staff or experts from the target country before launching any campaign."}
-      ],
-      "4.4": [
-        {q:"What is an MNC?",a:"A Multi-National Corporation (MNC) has its headquarters in one country and operates branches, manufacturing, or assembly plants in others (e.g., JLR in the UK, Brazil, China, India, Slovakia)."},
-        {q:"Consider the positive and negative local impacts of MNCs in terms of labour, wages, working conditions and job creation.",a:"Positive: career opportunities, Western training improves employability, higher wages, better health/safety standards, significant job creation. Negative: may strip local firms of skilled staff, pay locals less than expatriates, most jobs may be low-skilled."},
-        {q:"Consider the positive and negative impacts of MNCs in terms of FDI, balance of payments, technology, consumers, business culture and tax.",a:"Positive: FDI boosts GDP, employment, tax revenue; improves BoP; modern practices transfer to host country; more consumer choice; encourages entrepreneurship. Negative: profits repatriated; imports of machinery cause outflows; transfer pricing reduces host tax income."},
-        {q:"What is meant by global ethics?",a:"Behavioural principles and norms (right vs wrong) applied at an international level by MNCs — essential for maintaining global reputation, even where local laws are weak."},
-        {q:"What are the stakeholders for an international business?",a:"Governments and NGOs, communities, customers, shareholders, managers and employees, suppliers, and local competitors."},
-        {q:"Explain the issues relating to global pay and working conditions.",a:"Standards vary widely; in LEDCs, wages may be below living levels and conditions unsafe (e.g., no fire escapes). MNCs may exploit weak regulations to cut costs."},
-        {q:"What environmental considerations should an MNC think about on a global scale?",a:"Greenhouse gas emissions, waste disposal, resource depletion, and pollution — especially in LEDCs where enforcement is weak or nonexistent."},
-        {q:"Explain 'exploitation of labour'.",a:"The ILO estimates 21 million people are in forced labour. Bonded labour — working to repay a debt — is common in agriculture, brick kilns, and domestic work in Asia."},
-        {q:"Explain 'child labour'.",a:"Common in LEDCs due to poverty; children may work for food/shelter rather than pay. Banning it without alternatives can worsen outcomes (e.g., Bangladesh: girls moved from factories to prostitution)."},
-        {q:"Why is controlling MNCs complex?",a:"MNCs have huge economic power, can relocate easily ('footloose'), and may threaten to leave a country — taking jobs, FDI, and tax revenue with them."},
-        {q:"How can MNCs be controlled and influenced? What are the four ways?",a:"Political influence, legal control (including taxation), pressure groups, and social media."},
-        {q:"What is a pressure group?",a:"An organisation (e.g., Greenpeace, Amnesty International) that campaigns for social, environmental, or legal change — often internationally. Influences MNCs through naming and shaming, direct action, and lobbying governments."},
-        {q:"How does social media help control MNCs?",a:"Enables rapid mobilisation of public opinion, exposes misconduct instantly, and can orchestrate boycotts or viral criticism. Benefits: fast, powerful, transparent. Drawbacks: short-lived attention, MNCs may recover quickly."}
-      ]
-    }
+const API_KEY="$2a$10$zSnGgLjJslI1tFeqpbE/5etoM2CpojUUrr.l7amQlQq4Zk4ya36Sa";
+const BIN_ID="69c08b1aaa77b81da90c73b3";
+const BIN_URL="https://api.jsonbin.io/v3/b/"+BIN_ID;
+const PAGE_SIZE=25;
+let db={folders:{}};
+let syncTimer=null;
+let syncing=false;
+
+async function loadFromCloud(){
+  try{
+    const r=await fetch(BIN_URL+"/latest",{headers:{"X-Master-Key":API_KEY,"X-Bin-Meta":"false"}});
+    const data=await r.json();
+    db=data||{folders:{}};
+    if(!db.folders)db.folders={};
+  }catch(e){
+    const local=localStorage.getItem("rv_backup");
+    if(local)try{db=JSON.parse(local);}catch{}
   }
-};
-
-// ── Storage ───────────────────────────────────────────────────────────────────
-const SK = "rv_scores_v1";
-let scores = (() => { try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch { return {}; } })();
-function saveScores() { try { localStorage.setItem(SK, JSON.stringify(scores)); } catch {} }
-function getScore(subject, setName, idx) {
-  const k = subject+"||"+setName+"||"+idx;
-  return scores[k] || {right:0, wrong:0, reviews:0};
-}
-function markScore(subject, setName, idx, correct) {
-  const k = subject+"||"+setName+"||"+idx;
-  if (!scores[k]) scores[k] = {right:0, wrong:0, reviews:0};
-  scores[k].right += correct ? 1 : 0;
-  scores[k].wrong += correct ? 0 : 1;
-  scores[k].reviews += 1;
-  saveScores();
+  render();
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
-const PAGE_SIZE = 25;
-let S = { view:"home", subject:null, setName:null, secIdx:0, pageIdx:0, revealed:{}, showAll:false };
-function ss(p) { Object.assign(S, p); render(); }
+function saveToCloud(){
+  localStorage.setItem("rv_backup",JSON.stringify(db));
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(async()=>{
+    syncing=true;updateSync();
+    try{
+      await fetch(BIN_URL,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":API_KEY},body:JSON.stringify(db)});
+    }catch(e){}
+    syncing=false;updateSync();
+  },1000);
+}
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function updateSync(){
+  const el=document.getElementById("sync-ind");
+  if(el)el.textContent=syncing?"⏳ Saving...":"✓ Saved";
+}
 
-function navHtml(back, backFn, showWrong) {
-  return `<div class="nav">
-    ${back ? `<button onclick="${backFn}">← ${esc(back)}</button>` : ""}
+function parseNotes(raw){
+  const lines=raw.split("\n");
+  const pairs=[];
+  let section="";
+  function isHeader(t){
+    if(!t)return false;
+    if(/^\d+\.\d+(\.\d+)?[\s\-–—]/.test(t))return true;
+    if(/^(theme|section|unit|chapter|topic|part)\s+\d/i.test(t))return true;
+    if(t.length<70&&!t.endsWith("?")&&!t.endsWith(".")&&/^[A-Z0-9]/.test(t)&&!/[a-z]{15,}/.test(t)&&!/^(what|why|how|explain|define|identify|describe|compare|evaluate|assess|outline|state|give|list|provide|consider|where|when|who|discuss)/i.test(t))return true;
+    return false;
+  }
+  function isQ(t){
+    if(!t||isHeader(t))return false;
+    if(t.endsWith("?"))return true;
+    if(/^(what|why|how|explain|define|identify|describe|compare|evaluate|assess|outline|state|give|list|provide|consider|where|when|who|discuss|analyse|analyze|suggest|calculate|demonstrate)/i.test(t))return true;
+    return false;
+  }
+  function cleanAns(lines){
+    return lines.map(l=>l.replace(/^[\s]*[○●•\-–—*▪◦]\s*/,"").trim()).filter(Boolean).join(" ");
+  }
+  let i=0;
+  while(i<lines.length){
+    const line=lines[i].trim();
+    if(!line){i++;continue;}
+    if(isHeader(line)){const m=line.match(/^(\d+\.\d+)/);if(m)section=m[1];i++;continue;}
+    if(isQ(line)){
+      const ans=[];i++;
+      while(i<lines.length){
+        const next=lines[i].trim();
+        if(!next){i++;continue;}
+        if(isHeader(next)||isQ(next))break;
+        ans.push(next);i++;
+      }
+      const a=cleanAns(ans);
+      if(a)pairs.push({q:line,a,section:section||"General"});
+    }else{i++;}
+  }
+  return pairs;
+}
+
+function uid(){return Math.random().toString(36).slice(2,9);}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+let ST={view:"home",folderId:null,setId:null,secIdx:0,pageIdx:0,revealed:{},showAll:false,modal:null,inputName:"",uploadText:"",parseError:"",previewPairs:null};
+function ss(p){Object.assign(ST,p);render();}
+
+function navHtml(backLabel,backFn,showWrong){
+  return`<div class="nav">
+    ${backLabel?`<button onclick="${backFn}">← ${esc(backLabel)}</button>`:""}
     <span class="nav-title">📚 Revision Vault</span>
-    ${showWrong ? `<button class="btn-wrong" onclick="ss({view:'wrongbank'})">❌ Wrong Bank</button>` : ""}
+    <span class="syncing" id="sync-ind">✓ Saved</span>
+    ${showWrong?`<button class="btn-wrong" onclick="ss({view:'wrongbank'})">❌ Wrong Bank</button>`:""}
   </div>`;
 }
 
-// ── Wrong Bank ────────────────────────────────────────────────────────────────
-function getWrongItems() {
-  const items = [];
-  Object.entries(SUBJECTS).forEach(([subj, sets]) => {
-    Object.entries(sets).forEach(([setName, sections]) => {
-      Object.entries(sections).forEach(([sec, qs]) => {
-        qs.forEach((q, idx) => {
-          const sc = getScore(subj, setName, sec+"_"+idx);
-          if (sc.wrong > 0) items.push({...q, subj, setName, sec, idx, ...sc});
-        });
+function getWrongItems(){
+  const items=[];
+  Object.entries(db.folders||{}).forEach(([fid,folder])=>{
+    Object.entries(folder.sets||{}).forEach(([sid,set])=>{
+      Object.entries(set.questions||{}).forEach(([qid,q])=>{
+        if(q.wrong>0)items.push({...q,qid,sid,fid,folderName:folder.name,setName:set.name});
       });
     });
   });
-  return items.sort((a,b) => b.wrong - a.wrong);
+  return items.sort((a,b)=>b.wrong-a.wrong);
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-function render() {
-  let html = "";
-  if (S.view === "home") html = renderHome();
-  else if (S.view === "subject") html = renderSubject();
-  else if (S.view === "set") html = renderSet();
-  else if (S.view === "wrongbank") html = renderWrongBank();
-  document.getElementById("app").innerHTML = html;
+function createFolder(name){
+  const id=uid();
+  db.folders[id]={name,sets:{}};
+  saveToCloud();
+  ss({modal:null,inputName:""});
+}
+function deleteFolder(fid){
+  if(!confirm("Delete this folder?"))return;
+  delete db.folders[fid];saveToCloud();ss({});
+}
+function deleteSet(fid,sid){
+  if(!confirm("Delete this set?"))return;
+  delete db.folders[fid].sets[sid];saveToCloud();ss({});
+}
+function confirmUpload(){
+  const questions={};
+  ST.previewPairs.forEach((p,i)=>{
+    const qid=uid();
+    questions[qid]={q:p.q,a:p.a,section:p.section,right:0,wrong:0,reviews:0,order:i};
+  });
+  const id=uid();
+  const folder=db.folders[ST.folderId];
+  if(!folder.sets)folder.sets={};
+  folder.sets[id]={name:ST.inputName.trim(),questions};
+  saveToCloud();
+  ss({modal:null,inputName:"",uploadText:"",previewPairs:null,parseError:""});
+}
+function markQuestion(fid,sid,qid,correct){
+  const q=db.folders[fid].sets[sid].questions[qid];
+  q.right+=correct?1:0;q.wrong+=correct?0:1;q.reviews=(q.reviews||0)+1;
+  saveToCloud();
+  const rev={...ST.revealed};delete rev[qid];ss({revealed:rev});
+}
+function handleFile(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    ST.uploadText=ev.target.result;
+    const ta=document.getElementById("upload-ta");
+    if(ta)ta.value=ST.uploadText;
+  };
+  reader.readAsText(file);
+}
+function previewUpload(){
+  ST.parseError="";
+  const raw=ST.uploadText.trim();
+  if(!raw){ST.parseError="Please paste or upload your notes first.";render();return;}
+  const pairs=parseNotes(raw);
+  if(!pairs.length){ST.parseError="No questions detected. Make sure questions end with '?' or start with What/Why/How/Explain/Define etc.";render();return;}
+  ss({previewPairs:pairs,parseError:""});
+}
+function toggleQ(qid){const r={...ST.revealed};r[qid]=!r[qid];ss({revealed:r});}
+function toggleWrong(qid){ss({["wo_"+qid]:!ST["wo_"+qid]});}
+
+function render(){
+  let html="";
+  if(ST.view==="home")html=renderHome();
+  else if(ST.view==="folder")html=renderFolder();
+  else if(ST.view==="set")html=renderSet();
+  else if(ST.view==="wrongbank")html=renderWrongBank();
+  html+=renderModal();
+  document.getElementById("app").innerHTML=html;
+  updateSync();
 }
 
-function renderHome() {
-  const cards = Object.keys(SUBJECTS).map(subj => `
-    <div class="grid-card" onclick="ss({view:'subject',subject:'${esc(subj)}'})">
+function renderHome(){
+  const folders=db.folders||{};
+  let cards=Object.entries(folders).map(([fid,f])=>`
+    <div class="grid-card" onclick="ss({view:'folder',folderId:'${fid}'})">
+      <button class="del" onclick="event.stopPropagation();deleteFolder('${fid}')">×</button>
       <div class="emoji">📁</div>
-      <div class="name">${esc(subj)}</div>
-      <div class="sub">${Object.keys(SUBJECTS[subj]).length} sets</div>
+      <div class="name">${esc(f.name)}</div>
+      <div class="sub">${Object.keys(f.sets||{}).length} set(s)</div>
     </div>`).join("");
-  return navHtml("","",true) + `<div class="page">
+  cards+=`<div class="add-card" onclick="ss({modal:'newFolder',inputName:''})"><span style="font-size:22px">＋</span> New Folder</div>`;
+  return navHtml("","",true)+`<div class="page">
     <div class="page-title">Your Folders</div>
-    <div class="page-sub">Choose a subject to start revising.</div>
+    <div class="page-sub">Each folder is a subject. Upload once — saved forever.</div>
     <div class="grid">${cards}</div>
   </div>`;
 }
 
-function renderSubject() {
-  const sets = SUBJECTS[S.subject];
-  const cards = Object.entries(sets).map(([setName, secs]) => {
-    const total = Object.values(secs).reduce((a,b) => a+b.length, 0);
-    const wrong = Object.entries(secs).reduce((acc,[sec,qs]) => acc + qs.reduce((a,_,i) => a + getScore(S.subject,setName,sec+"_"+i).wrong, 0), 0);
-    return `<div class="grid-card" onclick="ss({view:'set',setName:'${esc(setName)}',secIdx:0,pageIdx:0,revealed:{},showAll:false})">
+function renderFolder(){
+  const folder=db.folders[ST.folderId];
+  if(!folder){ss({view:"home"});return"";}
+  let cards=Object.entries(folder.sets||{}).map(([sid,s])=>{
+    const qs=Object.values(s.questions||{});
+    const wrong=qs.reduce((a,q)=>a+q.wrong,0);
+    return`<div class="grid-card" onclick="ss({view:'set',setId:'${sid}',secIdx:0,pageIdx:0,revealed:{},showAll:false})">
+      <button class="del" onclick="event.stopPropagation();deleteSet('${ST.folderId}','${sid}')">×</button>
       <div class="emoji">📄</div>
-      <div class="name">${esc(setName)}</div>
-      <div class="sub">${total} questions · ${wrong} wrong</div>
+      <div class="name">${esc(s.name)}</div>
+      <div class="sub">${qs.length} questions · ${wrong} wrong</div>
     </div>`;
   }).join("");
-  return navHtml("Home","ss({view:'home'})",true) + `<div class="page">
-    <div class="page-title">${esc(S.subject)}</div>
-    <div class="page-sub">Choose a set to begin.</div>
+  cards+=`<div class="add-card" onclick="ss({modal:'newSet',inputName:'',uploadText:'',parseError:'',previewPairs:null})"><span style="font-size:22px">＋</span> Upload Set</div>`;
+  return navHtml("Home","ss({view:'home'})",true)+`<div class="page">
+    <div class="page-title">${esc(folder.name)}</div>
+    <div class="page-sub">Click a set to revise, or upload a new one.</div>
     <div class="grid">${cards}</div>
   </div>`;
 }
 
-function renderSet() {
-  const secs = SUBJECTS[S.subject][S.setName];
-  const secKeys = Object.keys(secs);
-  const si = Math.min(S.secIdx, secKeys.length-1);
-  const secKey = secKeys[si];
-  const qs = secs[secKey];
-  const totalPages = Math.max(1, Math.ceil(qs.length / PAGE_SIZE));
-  const pi = Math.min(S.pageIdx, totalPages-1);
-  const pageQs = qs.slice(pi*PAGE_SIZE, (pi+1)*PAGE_SIZE);
-  const half = Math.ceil(pageQs.length/2);
-  const left = pageQs.slice(0,half);
-  const right = pageQs.slice(half);
-
-  // Stats
-  let totalR=0,totalW=0,totalRev=0;
-  secKeys.forEach(sk => secs[sk].forEach((_,i) => {
-    const sc = getScore(S.subject, S.setName, sk+"_"+i);
-    totalR+=sc.right; totalW+=sc.wrong; totalRev+=sc.reviews;
-  }));
-  const totalQs = secKeys.reduce((a,sk)=>a+secs[sk].length,0);
-
-  const statsBar = `<div class="stats-bar">
-    <span>${totalQs} questions</span>
-    <span>🔁 <b>${totalRev}</b> reviews</span>
-    <span class="ws">❌ <b>${totalW}</b> wrong</span>
+function renderSet(){
+  const folder=db.folders[ST.folderId];
+  const set=folder&&folder.sets[ST.setId];
+  if(!set){ss({view:"folder"});return"";}
+  const allQs=Object.entries(set.questions||{}).sort((a,b)=>a[1].order-b[1].order);
+  const sMap={};
+  allQs.forEach(([qid,q])=>{const s=q.section||"General";if(!sMap[s])sMap[s]=[];sMap[s].push([qid,q]);});
+  const sKeys=Object.keys(sMap);
+  const si=Math.min(ST.secIdx,sKeys.length-1);
+  const secQs=sMap[sKeys[si]]||[];
+  const totalPages=Math.max(1,Math.ceil(secQs.length/PAGE_SIZE));
+  const pi=Math.min(ST.pageIdx,totalPages-1);
+  const pageQs=secQs.slice(pi*PAGE_SIZE,(pi+1)*PAGE_SIZE);
+  const half=Math.ceil(pageQs.length/2);
+  const left=pageQs.slice(0,half);
+  const right=pageQs.slice(half);
+  const totalReviews=allQs.reduce((s,[,q])=>s+(q.reviews||0),0);
+  const totalWrong=allQs.reduce((s,[,q])=>s+q.wrong,0);
+  const statsBar=`<div class="stats-bar">
+    <span>${allQs.length} questions</span>
+    <span>🔁 <b>${totalReviews}</b> reviews</span>
+    <span class="ws">❌ <b>${totalWrong}</b> wrong</span>
     <div class="btns">
       <button onclick="ss({showAll:false,revealed:{}})">Hide All</button>
       <button onclick="ss({showAll:true})">Show All</button>
     </div>
   </div>`;
-
-  const tabs = `<div class="tabs">${secKeys.map((sk,i) => `<button class="tab${i===si?" active":""}" onclick="ss({secIdx:${i},pageIdx:0,revealed:{},showAll:false})">${esc(sk)}</button>`).join("")}</div>`;
-  const info = `<div class="page-info">Section ${esc(secKey)} · Page ${pi+1} of ${totalPages} · showing ${pageQs.length} of ${qs.length} questions</div>`;
-
-  function qCard(q, absIdx) {
-    const k = secKey+"_"+absIdx;
-    const open = S.showAll || !!S.revealed[k];
-    const sc = getScore(S.subject, S.setName, k);
-    const badge = sc.reviews > 0 ? `<span class="qcard-badge">${sc.reviews}× ✕${sc.wrong}</span>` : "";
-    const ans = open ? `<div class="qcard-a">
+  const tabs=`<div class="tabs">${sKeys.map((sk,i)=>`<button class="tab${i===si?" active":""}" onclick="ss({secIdx:${i},pageIdx:0,revealed:{},showAll:false})">${esc(sk)}</button>`).join("")}</div>`;
+  const info=`<div class="page-info">Section ${esc(sKeys[si])} · Page ${pi+1} of ${totalPages} · showing ${pageQs.length} of ${secQs.length} questions</div>`;
+  function qCard([qid,q]){
+    const open=ST.showAll||!!ST.revealed[qid];
+    const badge=(q.reviews||0)>0?`<span class="qcard-badge">${q.reviews}× ✕${q.wrong}</span>`:"";
+    const ans=open?`<div class="qcard-a">
       <div class="qcard-a-text">${esc(q.a)}</div>
       <div class="qcard-btns">
-        <button class="btn-got" onclick="mark('${k}',true)">✅ Got it</button>
-        <button class="btn-missed" onclick="mark('${k}',false)">❌ Missed it</button>
+        <button class="btn-got" onclick="markQuestion('${ST.folderId}','${ST.setId}','${qid}',true)">✅ Got it</button>
+        <button class="btn-missed" onclick="markQuestion('${ST.folderId}','${ST.setId}','${qid}',false)">❌ Missed it</button>
         <span class="btn-hint">or close to just learn</span>
       </div>
-    </div>` : "";
-    return `<div class="qcard${open?" open":""}">
-      <div class="qcard-q" onclick="toggleQ('${k}')">
+    </div>`:"";
+    return`<div class="qcard${open?" open":""}">
+      <div class="qcard-q" onclick="toggleQ('${qid}')">
         <div class="qcard-q-text">${esc(q.q)}</div>
         <div class="qcard-meta">${badge}<span class="qcard-arrow">${open?"▲":"▼"}</span></div>
       </div>${ans}
     </div>`;
   }
-
-  const leftHtml = left.map((q,i) => qCard(q, pi*PAGE_SIZE+i)).join("");
-  const rightHtml = right.map((q,i) => qCard(q, pi*PAGE_SIZE+half+i)).join("");
-  const twoCol = `<div class="two-col"><div class="col">${leftHtml}</div><div class="col">${rightHtml}</div></div>`;
-
-  const pageBtns = Array.from({length:totalPages},(_,i) => `<button class="page-btn${i===pi?" active":""}" onclick="ss({pageIdx:${i},revealed:{},showAll:false})">${i+1}</button>`).join("");
-  const doneBtn = pi<totalPages-1
-    ? `<button class="btn-done" onclick="ss({pageIdx:${pi+1},revealed:{},showAll:false})">Done with this page →</button>`
-    : si<secKeys.length-1
-    ? `<button class="btn-next-sec" onclick="ss({secIdx:${si+1},pageIdx:0,revealed:{},showAll:false})">Done — next section →</button>`
-    : "";
-  const pageNav = `<div class="page-nav"><span class="page-nav-label">Pages:</span>${pageBtns}${doneBtn}</div>`;
-
-  return navHtml(S.setName.length>22?S.setName.slice(0,22)+"…":S.setName,`ss({view:'subject'})`,true) +
-    `<div class="page">${statsBar}${tabs}${info}${twoCol}${pageNav}</div>`;
+  const twoCol=`<div class="two-col"><div class="col">${left.map(qCard).join("")}</div><div class="col">${right.map(qCard).join("")}</div></div>`;
+  const pageBtns=Array.from({length:totalPages},(_,i)=>`<button class="page-btn${i===pi?" active":""}" onclick="ss({pageIdx:${i},revealed:{},showAll:false})">${i+1}</button>`).join("");
+  const doneBtn=pi<totalPages-1
+    ?`<button class="btn-done" onclick="ss({pageIdx:${pi+1},revealed:{},showAll:false})">Done with this page →</button>`
+    :si<sKeys.length-1
+    ?`<button class="btn-next-sec" onclick="ss({secIdx:${si+1},pageIdx:0,revealed:{},showAll:false})">Done — next section →</button>`
+    :"";
+  const pageNav=`<div class="page-nav"><span class="page-nav-label">Pages:</span>${pageBtns}${doneBtn}</div>`;
+  const shortName=set.name.length>22?set.name.slice(0,22)+"…":set.name;
+  return navHtml(shortName,`ss({view:'folder'})`,true)+`<div class="page">${statsBar}${tabs}${info}${twoCol}${pageNav}</div>`;
 }
 
-function renderWrongBank() {
-  const items = getWrongItems();
-  const list = items.length === 0
-    ? `<p style="color:#a39585;text-align:center;margin-top:50px;font-size:16px">No wrong answers yet. Keep revising!</p>`
-    : `<div class="wrong-cols">${items.map((item,i) => {
-        const open = !!S["wo_"+item.subj+"_"+item.setName+"_"+item.sec+"_"+item.idx];
-        return `<div class="wrong-item">
-          <div class="wrong-top" onclick="toggleWrong('${item.subj}','${item.setName}','${item.sec}','${item.idx}')">
+function renderWrongBank(){
+  const items=getWrongItems();
+  const list=items.length===0
+    ?`<p style="color:#a39585;text-align:center;margin-top:50px;font-size:16px">No wrong answers yet. Keep revising!</p>`
+    :`<div class="wrong-cols">${items.map((item,i)=>{
+        const open=!!ST["wo_"+item.qid];
+        return`<div class="wrong-item">
+          <div class="wrong-top" onclick="toggleWrong('${item.qid}')">
             <div class="wrong-rank">#${i+1}</div>
             <div style="flex:1">
               <div class="wrong-q-text">${esc(item.q)}</div>
-              <div class="wrong-q-sub">${esc(item.subj)} → ${esc(item.setName)}</div>
+              <div class="wrong-q-sub">${esc(item.folderName)} → ${esc(item.setName)}</div>
             </div>
             <div class="wrong-counts">
               <div class="wrong-count">✕${item.wrong}</div>
-              <div class="wrong-reviews">${item.reviews} reviews</div>
+              <div class="wrong-reviews">${item.reviews||0} reviews</div>
             </div>
           </div>
-          ${open ? `<div class="wrong-answer">${esc(item.a)}</div>` : ""}
+          ${open?`<div class="wrong-answer">${esc(item.a)}</div>`:""}
         </div>`;
       }).join("")}</div>`;
-  return navHtml("Home","ss({view:'home'})",false) + `<div class="page">
+  return navHtml("Home","ss({view:'home'})",false)+`<div class="page">
     <div class="page-title">Most Missed Questions</div>
     <div class="page-sub">Ranked by wrong marks — your weak spots surfaced.</div>
     ${list}
   </div>`;
 }
 
-function toggleQ(k) {
-  const rev = {...S.revealed}; rev[k] = !rev[k]; ss({revealed:rev});
-}
-function toggleWrong(subj,setName,sec,idx) {
-  const k = "wo_"+subj+"_"+setName+"_"+sec+"_"+idx;
-  ss({[k]: !S[k]});
-}
-function mark(k, correct) {
-  const parts = k.split("_"); // secKey_idx → but secKey itself has underscore too
-  // k format: "4.1_3" where sec=4.1 idx=3
-  const lastUnderscore = k.lastIndexOf("_");
-  const sec = k.slice(0, lastUnderscore);
-  const idx = parseInt(k.slice(lastUnderscore+1));
-  markScore(S.subject, S.setName, k, correct);
-  const rev = {...S.revealed}; delete rev[k]; ss({revealed:rev});
+function renderModal(){
+  if(!ST.modal)return"";
+  if(ST.modal==="newFolder")return`<div class="overlay" onclick="if(event.target===this)ss({modal:null})">
+    <div class="modal">
+      <h2>New Folder</h2><p></p>
+      <label>Folder name</label>
+      <input id="fi" value="${esc(ST.inputName)}" placeholder="e.g. Business" oninput="ST.inputName=this.value" onkeydown="if(event.key==='Enter'&&ST.inputName.trim())createFolder(ST.inputName.trim())">
+      <div class="modal-row">
+        <button class="btn-cancel" onclick="ss({modal:null})">Cancel</button>
+        <button class="btn-primary" onclick="if(ST.inputName.trim())createFolder(ST.inputName.trim())">Create</button>
+      </div>
+    </div>
+  </div>`;
+  if(ST.modal==="newSet"&&!ST.previewPairs)return`<div class="overlay" onclick="if(event.target===this)ss({modal:null})">
+    <div class="modal">
+      <h2>Upload New Set</h2>
+      <p>Upload a .txt file or paste your notes below.</p>
+      <label>Set name</label>
+      <input id="si" value="${esc(ST.inputName)}" placeholder="e.g. Theme 4 Global Business" oninput="ST.inputName=this.value">
+      <label for="file-inp" style="display:block;background:#f5f2ed;border:2px dashed #d9d2c8;border-radius:9px;padding:12px 14px;color:#4a3728;font-size:14px;cursor:pointer;text-align:center;margin-bottom:10px">📎 Upload .txt file</label>
+      <input id="file-inp" type="file" accept=".txt,.text" style="display:none" onchange="handleFile(event)">
+      <div class="divider">or paste below</div>
+      <textarea id="upload-ta" placeholder="4.1.2 International Trade&#10;&#10;Define specialisation.&#10;Specialisation is the process of..." oninput="ST.uploadText=this.value">${esc(ST.uploadText)}</textarea>
+      <div style="font-size:12px;color:#a39585;margin-top:4px">Supports bullet-point notes, Q:/A: format, or plain paragraph answers.</div>
+      ${ST.parseError?`<div class="error">${esc(ST.parseError)}</div>`:""}
+      <div class="modal-row">
+        <button class="btn-cancel" onclick="ss({modal:null})">Cancel</button>
+        <button class="btn-primary" onclick="previewUpload()">Parse & Preview →</button>
+      </div>
+    </div>
+  </div>`;
+  if(ST.modal==="newSet"&&ST.previewPairs){
+    const items=ST.previewPairs.map(p=>`<div class="preview-item">
+      <div class="preview-sec">§ ${esc(p.section)}</div>
+      <div class="preview-q">${esc(p.q)}</div>
+      <div class="preview-a">${esc(p.a.slice(0,120))}${p.a.length>120?"…":""}</div>
+    </div>`).join("");
+    return`<div class="overlay" onclick="if(event.target===this)ss({modal:null})">
+      <div class="modal">
+        <h2>Preview — ${ST.previewPairs.length} questions found</h2>
+        <p>Check a few look right, then confirm to save forever.</p>
+        <div class="preview-list">${items}</div>
+        <div class="modal-row">
+          <button class="btn-cancel" onclick="ss({previewPairs:null})">← Back</button>
+          <button class="btn-primary" onclick="confirmUpload()">Confirm & Save ✓</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  return"";
 }
 
-render();
+loadFromCloud();
 </script>
 </body>
 </html>
